@@ -19,18 +19,14 @@ export class App {
   public server: HttpServer;
   public io: SocketIOServer | undefined;
   
-  constructor(routes: Routes[] = []) {
+  constructor() {  // ← Removed routes parameter
     this.app = express();
     this.server = createServer(this.app);
     this.env = NODE_ENV || 'development';
     this.port = PORT || 3000;
 
     this.initializeMiddlewares();
-    if (routes && routes.length > 0) {
-      this.initializeRoutes(routes);
-    }
     this.initializeSwagger();
-    this.initializeErrorHandling();
     this.initializeSocketIO();
   }
 
@@ -50,7 +46,7 @@ export class App {
           Documentación de la API: ${apiDocsUrl}
           Hora de inicio: ${new Date().toLocaleString()}
           ===========================================================
-        `.replace(/^\s+/gm, '')); // Elimina la indentación del template literal
+        `.replace(/^\s+/gm, ''));
         resolve();
       }).on('error', (error: Error) => {
         logger.error('Error al iniciar el servidor:', error);
@@ -69,7 +65,6 @@ export class App {
           }
           logger.info('Servidor HTTP cerrado correctamente');
           
-          // Cerrar conexión de Prisma si es necesario
           if (prisma) {
             prisma.$disconnect()
               .then(() => {
@@ -99,6 +94,8 @@ export class App {
   }
 
   private initializeMiddlewares() {
+    logger.info('Initializing middlewares...');
+    
     // Request logging
     this.app.use(morgan(LOG_FORMAT, { stream: { write: (message: string) => logger.info(message.trim()) } }));
     
@@ -108,11 +105,9 @@ export class App {
     // Enable CORS with more permissive settings for development
     const corsOptions = {
       origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-        // Allow all origins in development
         if (this.env === 'development' || !origin) {
           callback(null, true);
         } else {
-          // In production, use the configured origin
           const allowedOrigins = ORIGIN ? ORIGIN.split(',').map(o => o.trim()) : [];
           if (allowedOrigins.includes(origin)) {
             callback(null, true);
@@ -125,12 +120,10 @@ export class App {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       exposedHeaders: ['Content-Range', 'X-Total-Count'],
-      maxAge: 600 // 10 minutes
+      maxAge: 600
     };
 
     this.app.use(cors(corsOptions));
-    
-    // Handle preflight requests
     this.app.options('*', cors(corsOptions));
     
     // Parse JSON request body
@@ -148,33 +141,82 @@ export class App {
         env: this.env,
       });
     });
+    
+    logger.info('Middlewares initialized');
   }
 
   public initializeRoutes(routes: Routes[]) {
-    routes.forEach(route => {
-      logger.info(`Mounted routes at: ${route.path}`);
+    logger.info(`Initializing ${routes.length} route groups...`);
+    
+    routes.forEach((route, index) => {
+      logger.info(`${index + 1}. Mounting routes at: ${route.path}`);
+      
+      // Debug: log the route object
+      logger.info(`Route object:`, {
+        path: route.path,
+        hasRouter: !!route.router,
+        routerStackLength: route.router?.stack?.length || 0
+      });
+      
+      // Mount the router
       this.app.use(route.path, route.router);
+      
+      logger.info(`✅ Routes mounted successfully at: ${route.path}`);
     });
+    
+    // ¡IMPORTANTE! Inicializar error handling DESPUÉS de montar las rutas
+    this.initializeErrorHandling();
+    
+    // Debug: Log all routes after mounting
+    logger.info('=== All mounted routes ===');
+    this.app._router?.stack?.forEach((layer: any, index: number) => {
+      if (layer.route) {
+        const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
+        logger.info(`${index}: ${methods} ${layer.route.path}`);
+      } else if (layer.name === 'router' && layer.regexp) {
+        const pathRegex = layer.regexp.toString();
+        logger.info(`${index}: Router - ${pathRegex}`);
+        
+        if (layer.handle?.stack) {
+          layer.handle.stack.forEach((subLayer: any, subIndex: number) => {
+            if (subLayer.route) {
+              const methods = Object.keys(subLayer.route.methods).join(', ').toUpperCase();
+              logger.info(`  ${index}.${subIndex}: ${methods} ${subLayer.route.path}`);
+            }
+          });
+        }
+      } else {
+        logger.info(`${index}: ${layer.name || 'unnamed'} middleware`);
+      }
+    });
+    logger.info('=== End mounted routes ===');
   }
 
   private initializeSwagger() {
     if (this.env === 'development' || this.env === 'staging') {
       setupSwagger(this.app);
+      logger.info('Swagger documentation initialized');
     }
   }
 
   private initializeErrorHandling() {
-    // 404 handler
+    logger.info('Initializing error handling...');
+    
+    // 404 handler - DEBE ir DESPUÉS de todas las rutas
     this.app.use((req: Request, res: Response) => {
+      logger.warn(`404 - Route not found: ${req.method} ${req.path}`);
       res.status(404).json({
         success: false,
         status: 404,
         message: 'Not Found',
+        path: req.path,
+        method: req.method
       });
     });
 
-    // Error handler
+    // Error handler - DEBE ir al final
     this.app.use(ErrorMiddleware);
+    logger.info('Error handling initialized');
   }
 
   private initializeSocketIO() {
@@ -189,9 +231,7 @@ export class App {
     this.io.on('connection', (socket: Socket) => {
       logger.info(`Client connected: ${socket.id}`);
 
-      // Handle file upload progress
       socket.on('upload-progress', (data: { uploadId: string; progress: number }) => {
-        // Broadcast to all clients except sender
         socket.broadcast.emit(`upload-progress-${data.uploadId}`, data);
       });
 
@@ -199,35 +239,9 @@ export class App {
         logger.info(`Client disconnected: ${socket.id}`);
       });
     });
-  }
-
-  private gracefulShutdown = async () => {
-    logger.info('Shutting down gracefully...');
     
-    try {
-      // Close HTTP server
-      this.server.close(async () => {
-        logger.info('HTTP server closed.');
-        
-        // Close database connection
-        await prisma.$disconnect();
-        logger.info('Database connection closed.');
-        
-        // Close Socket.IO
-        if (this.io) {
-          this.io.close(() => {
-            logger.info('Socket.IO server closed.');
-            process.exit(0);
-          });
-        } else {
-          process.exit(0);
-        }
-      });
-    } catch (error) {
-      logger.error('Error during shutdown:', error);
-      process.exit(1);
-    }
-  };
+    logger.info('Socket.IO initialized');
+  }
 }
 
 // Crear una instancia de la aplicación sin rutas

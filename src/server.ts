@@ -11,11 +11,47 @@ import './infrastructure/config/Database';
 
 async function startServer() {
   try {
-    // Agregar rutas a la aplicación
+    // Create route instances
+    const healthRoutes = new HealthRoutes();
+    const mediaRoutes = new MediaRoutes();
+    
+    logger.info('Route instances created');
+    logger.info(`HealthRoutes path: ${healthRoutes.path}`);
+    logger.info(`MediaRoutes path: ${mediaRoutes.path}`);
+    
+    // ¡IMPORTANTE! Agregar rutas a la aplicación DESPUÉS de crear la app
+    // pero ANTES de iniciar el servidor
     app.initializeRoutes([
-      new MediaRoutes(),
-      new HealthRoutes(),
+      mediaRoutes,
+      healthRoutes,
     ]);
+
+    // Debug: Log all registered routes
+    logger.info('=== All Express Routes ===');
+    const router = app.getServer()._router;
+    if (router && router.stack) {
+      router.stack.forEach((layer: any, index: number) => {
+        if (layer.route) {
+          const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
+          logger.info(`${index}: ${methods} ${layer.route.path}`);
+        } else if (layer.name === 'router' && layer.regexp) {
+          logger.info(`${index}: Router middleware - ${layer.regexp}`);
+          if (layer.handle && layer.handle.stack) {
+            layer.handle.stack.forEach((subLayer: any, subIndex: number) => {
+              if (subLayer.route) {
+                const methods = Object.keys(subLayer.route.methods).join(', ').toUpperCase();
+                logger.info(`  ${index}.${subIndex}: ${methods} ${subLayer.route.path}`);
+              }
+            });
+          }
+        } else {
+          logger.info(`${index}: ${layer.name || 'unnamed'} middleware`);
+        }
+      });
+    } else {
+      logger.error('No router found or router has no stack');
+    }
+    logger.info('=== End Routes ===');
 
     // Iniciar el servidor
     await app.listen();
@@ -31,7 +67,6 @@ async function startServer() {
 process.on('uncaughtException', (error: Error) => {
   logger.error('Excepción no capturada:', error);
   if (NODE_ENV === 'production') {
-    // En producción, podrías querer reiniciar el proceso
     process.exit(1);
   }
 });
@@ -40,7 +75,6 @@ process.on('uncaughtException', (error: Error) => {
 process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   logger.error('Promesa rechazada no manejada en:', promise, 'razón:', reason);
   if (NODE_ENV === 'production') {
-    // En producción, podrías querer reiniciar el proceso
     process.exit(1);
   }
 });
