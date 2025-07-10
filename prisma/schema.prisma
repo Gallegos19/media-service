@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MediaFile {
+  id                  String          @id @default(uuid())
+  originalFilename    String          @map("original_filename")
+  fileType            String          @map("file_type")
+  mediaCategory       String          @map("media_category")
+  mimeType           String          @map("mime_type")
+  fileSizeBytes       BigInt          @map("file_size_bytes")
+  widthPixels        Int?            @map("width_pixels")
+  heightPixels       Int?            @map("height_pixels")
+  durationSeconds    Int?            @map("duration_seconds")
+  uploadedByUserId   String          @map("uploaded_by_user_id")
+  uploadPurpose      String?         @map("upload_purpose")
+  storageProvider    String          @default("s3") @map("storage_provider")
+  storagePath        String          @map("storage_path")
+  publicUrl          String?         @map("public_url")
+  thumbnailUrl       String?         @map("thumbnail_url")
+  isProcessed        Boolean         @default(false) @map("is_processed")
+  isPublic           Boolean         @default(false) @map("is_public")
+  downloadCount      Int             @default(0) @map("download_count")
+  virusScanStatus    String          @default("pending") @map("virus_scan_status")
+  metadata          Json?           @default("{}")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  deletedAt         DateTime?       @map("deleted_at")
+  createdBy         String?         @map("created_by")
+  updatedBy         String?         @map("updated_by")
+  
+  variants MediaVariant[]
+  processingJobs ProcessingJob[]
+
+  @@map("media_files")
+  @@index([uploadedByUserId], name: "idx_media_files_uploaded_by_user_id")
+}
+
+model MediaVariant {
+  id                String    @id @default(uuid())
+  originalFileId    String    @map("original_file_id")
+  variantType       String    @map("variant_type")
+  widthPixels      Int?      @map("width_pixels")
+  heightPixels     Int?      @map("height_pixels")
+  fileSizeBytes    BigInt?   @map("file_size_bytes")
+  qualityPercentage Int?     @map("quality_percentage")
+  format           String?
+  storagePath      String    @map("storage_path")
+  publicUrl        String?   @map("public_url")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  originalFile     MediaFile @relation(fields: [originalFileId], references: [id], onDelete: Cascade)
+
+  @@map("media_variants")
+}
+
+model UploadSession {
+  id                String        @id @default(uuid())
+  userId            String        @map("user_id")
+  sessionToken      String        @unique @map("session_token")
+  totalChunks       Int           @map("total_chunks")
+  uploadedChunks    Int           @default(0) @map("uploaded_chunks")
+  totalSizeBytes    BigInt        @map("total_size_bytes")
+  currentSizeBytes  BigInt        @default(0) @map("current_size_bytes")
+  status            String        @default("active")
+  expiresAt         DateTime      @map("expires_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  
+  chunks           UploadChunk[]
+
+  @@map("upload_sessions")
+}
+
+model UploadChunk {
+  id              String        @id @default(uuid())
+  sessionId       String        @map("session_id")
+  chunkNumber     Int           @map("chunk_number")
+  chunkSizeBytes  BigInt        @map("chunk_size_bytes")
+  s3Etag         String?       @map("s3_etag")
+  uploadedAt      DateTime      @default(now()) @map("uploaded_at")
+
+  session         UploadSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, chunkNumber], name: "upload_chunks_session_id_chunk_number_key")
+  @@map("upload_chunks")
+}
+
+model ProcessingJob {
+  id                String    @id @default(uuid())
+  mediaFileId       String?   @map("media_file_id")
+  jobType           String    @map("job_type")
+  status            String    @default("pending")
+  parameters       Json?     @default("{}")
+  progressPercentage Int      @default(0) @map("progress_percentage")
+  errorMessage     String?   @map("error_message")
+  startedAt        DateTime? @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  mediaFile        MediaFile? @relation(fields: [mediaFileId], references: [id], onDelete: Cascade)
+
+  @@map("processing_jobs")
+}
