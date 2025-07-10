@@ -6,6 +6,29 @@ import { MAX_FILE_SIZE, FILE_SIZE_LIMITS } from '../../../../config';
 // Configure memory storage
 const storage = multer.memoryStorage();
 
+// Helper function to get file type category
+const getFileTypeCategory = (mimetype: string): string => {
+  if (mimetype.startsWith('image/')) return 'imágenes';
+  if (mimetype.startsWith('video/')) return 'videos';
+  if (mimetype.startsWith('audio/')) return 'audios';
+  if (mimetype === 'application/pdf') return 'documentos PDF';
+  return 'archivos';
+};
+
+// Helper function to get allowed extensions for UI
+const getAllowedExtensions = (): string[] => {
+  const extensions = new Set<string>();
+  
+  Object.keys(FILE_SIZE_LIMITS).forEach(mime => {
+    const ext = mime.split('/')[1];
+    if (ext) {
+      extensions.add(ext.toUpperCase());
+    }
+  });
+  
+  return Array.from(extensions).sort();
+};
+
 const fileFilter = (
   req: Request,
   file: Express.Multer.File,
@@ -26,9 +49,16 @@ const fileFilter = (
   } else {
     // Log the rejection
     console.log(`Rejected file type: ${file.mimetype}`);
-    console.log('Allowed types:', allowedMimeTypes);
     
-    cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}. Formatos soportados: ${allowedMimeTypes.join(', ')}`));
+    // Get file extension for better error message
+    const fileExt = file.originalname.split('.').pop()?.toUpperCase() || 'desconocida';
+    const allowedExtensions = getAllowedExtensions();
+    
+    const errorMessage = `Formato de archivo no soportado (${fileExt}). ` +
+      `Por favor, sube ${getFileTypeCategory(file.mimetype)} con los siguientes formatos: ` +
+      `${allowedExtensions.join(', ')}.`;
+    
+    cb(new Error(errorMessage));
   }
 };
 
