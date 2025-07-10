@@ -99,13 +99,9 @@ export class MediaController {
   public getFilesByCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { category } = req.params;
-      const userId = req.user?.id;
       
-      logger.info('getFilesByCategory called', { category, userId });
+      logger.info('getFilesByCategory called', { category });
 
-      if (!userId) {
-        throw new UnauthorizedException('Se requiere autenticación');
-      }
       
       if (!Object.values(MediaCategory).includes(category as MediaCategory)) {
         throw new BadRequestException(`Categoría no válida. Las categorías permitidas son: ${Object.values(MediaCategory).join(', ')}`);
@@ -113,9 +109,9 @@ export class MediaController {
 
       const files = await this.mediaFileRepository.findByCategory(category as MediaCategory);
       
-      // Filtrar solo archivos públicos o del usuario autenticado
+      // Filtrar solo archivos público
       const filteredFiles = files.filter(file => 
-        file.isPublic || file.uploadedByUserId === userId
+        !file.isPublic
       );
       
       res.status(200).json({

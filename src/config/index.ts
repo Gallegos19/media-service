@@ -42,10 +42,40 @@ export const S3_CONFIG = {
 } as const;
 
 // File Uploads
-export const MAX_FILE_SIZE = process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE, 10) : 10 * 1024 * 1024; // 10MB
+export const MAX_FILE_SIZE = process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE, 10) : 50 * 1024 * 1024; // 50MB default
+
+// Specific file size limits (in bytes)
+export const FILE_SIZE_LIMITS = {
+  // Images
+  'image/jpeg': 10 * 1024 * 1024, // 10MB
+  'image/png': 10 * 1024 * 1024,  // 10MB
+  'image/gif': 20 * 1024 * 1024,  // 20MB
+  'image/webp': 10 * 1024 * 1024, // 10MB
+  
+  // Documents
+  'application/pdf': 20 * 1024 * 1024, // 20MB
+  
+  // Videos
+  'video/mp4': 200 * 1024 * 1024, // 200MB
+  'video/quicktime': 200 * 1024 * 1024, // 200MB
+  'video/x-msvideo': 200 * 1024 * 1024, // .avi
+  'video/x-ms-wmv': 200 * 1024 * 1024,  // .wmv
+  'video/x-matroska': 200 * 1024 * 1024, // .mkv
+  'video/webm': 200 * 1024 * 1024,      // .webm
+  'video/3gpp': 200 * 1024 * 1024,      // .3gp
+  'video/mpeg': 200 * 1024 * 1024,      // .mpeg
+  
+  // Audio
+  'audio/mpeg': 50 * 1024 * 1024, // 50MB
+  'audio/wav': 100 * 1024 * 1024, // 100MB
+  'audio/ogg': 100 * 1024 * 1024, // 100MB
+  'audio/webm': 100 * 1024 * 1024, // 100MB
+  'audio/x-m4a': 100 * 1024 * 1024, // 100MB
+};
+
 export const ALLOWED_FILE_TYPES = process.env.ALLOWED_FILE_TYPES 
   ? process.env.ALLOWED_FILE_TYPES.split(',').map(type => type.trim())
-  : ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+  : Object.keys(FILE_SIZE_LIMITS);
 
 // Default upload directory in the project root
 const DEFAULT_UPLOAD_DIR = path.resolve(process.cwd(), 'uploads');
