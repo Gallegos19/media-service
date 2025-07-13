@@ -29,8 +29,11 @@ RUN npm run build 2>&1 | tee build.log || (cat build.log && exit 1)
 # Set production environment
 ENV NODE_ENV=production
 
-# Clean up dev dependencies (keep path resolution modules)
-RUN npm prune --production --no-save tsconfig-paths module-alias
+# Ensure module-alias is installed as production dependency
+RUN npm install module-alias --save-prod
 
-# Run the application with proper module resolution
-CMD ["node", "-r", "module-alias/register", "dist/server.js"]
+# Clean up dev dependencies
+RUN npm prune --production
+
+# Run the application with simpler startup
+CMD ["node", "dist/server.js"]
