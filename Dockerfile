@@ -19,6 +19,7 @@ RUN npx prisma generate --generator client
 
 # Copia el resto del código fuente y construye
 COPY . .
+COPY --from=builder --chown=node:node /app/node_modules/swagger-ui-dist ./node_modules/swagger-ui-dist/
 RUN npm run build 2>&1 | tee /tmp/build.log || (cat /tmp/build.log && exit 1)
 
 # Stage 2: Runtime
@@ -31,6 +32,7 @@ WORKDIR /app
 
 # Copia solo lo necesario desde el builder
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/node_modules/swagger-ui-dist ./node_modules/swagger-ui-dist/
 COPY --from=builder --chown=node:node /app/package*.json ./
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/prisma ./prisma
@@ -43,6 +45,7 @@ RUN mkdir -p /app/logs && \
 USER node
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV API_BASE_URL=https://your-production-url.com
 ENV PRISMA_CLIENT_ENGINE_TYPE=binary
 ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
 

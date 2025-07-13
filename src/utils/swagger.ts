@@ -5,15 +5,18 @@ import { API_DOCS_PATH, NODE_ENV } from '@config/index';
 import { version } from '../../package.json';
 
 export const setupSwagger = (app: Application) => {
-  if (NODE_ENV === 'production') return;
-
+  // Only enable full Swagger UI in non-production environments
+  const isProduction = NODE_ENV === 'production';
+  
   const options: swaggerJSDoc.Options = {
     definition: {
       openapi: '3.0.0',
       info: {
         title: 'Media Service API',
         version,
-        description: 'API para la gestión de archivos multimedia',
+        description: isProduction 
+          ? 'Production API Documentation - Some features may be limited'
+          : 'API para la gestión de archivos multimedia',
         contact: {
           name: 'Soporte Técnico',
           email: 'soporte@ejemplo.com',
@@ -21,8 +24,12 @@ export const setupSwagger = (app: Application) => {
       },
       servers: [
         {
-          url: 'http://localhost:3003',
-          description: 'Servidor de desarrollo',
+          url: isProduction 
+            ? process.env.API_BASE_URL || 'https://media-service-production-6446.up.railway.app/' 
+            : 'http://localhost:3003',
+          description: isProduction 
+            ? process.env.API_BASE_URL ? 'Production server' : 'Production server (configure API_BASE_URL)'
+            : 'Servidor de desarrollo',
         },
       ],
       components: {
