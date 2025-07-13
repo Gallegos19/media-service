@@ -29,8 +29,8 @@ RUN npm run build 2>&1 | tee build.log || (cat build.log && exit 1)
 # Set production environment
 ENV NODE_ENV=production
 
-# Clean up dev dependencies
-RUN npm prune --production
+# Clean up dev dependencies (keep tsconfig-paths)
+RUN npm prune --production --no-save tsconfig-paths
 
 # Run the application
-CMD ["npm", "start"]
+CMD ["node", "dist/server.js"]
