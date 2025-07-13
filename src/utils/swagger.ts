@@ -6,7 +6,7 @@ import { version } from '../../package.json';
 
 export const setupSwagger = (app: Application) => {
   // Only enable full Swagger UI in non-production environments
-  const isProduction = NODE_ENV === 'master';
+  const isProduction = NODE_ENV === 'development';
   
   // Ajusta las rutas de los archivos según el entorno
   const apis = isProduction
