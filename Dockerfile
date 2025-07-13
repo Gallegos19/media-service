@@ -1,33 +1,29 @@
-# Use the same Node version as specified in package.json
+# Usa Node 18
 FROM node:18-alpine
 
-# Install dependencies needed for Prisma and other build tools
+# Dependencias del sistema para Prisma y build
 RUN apk add --no-cache openssl python3 make g++ git
 
-# Create app directory
 WORKDIR /app
 
-# Install dependencies first for better caching
+# Copia package.json y lock para instalar dependencias
 COPY package*.json ./
 COPY prisma/schema.prisma ./prisma/
 
-# Install all dependencies including devDependencies
+# Instala todas las dependencias (prod + dev)
 RUN npm install
 
-# Generate Prisma client
+# Genera el cliente de Prisma
 RUN npx prisma generate
 
-# Copy source files
+# Copia el resto del código fuente
 COPY . .
 
-# Build the application with error output
+# Compila TypeScript
 RUN npm run build 2>&1 | tee build.log || (cat build.log && exit 1)
 
-# Set production environment
-ENV NODE_ENV=production
+# Elimina devDependencies (pero NO las de prod)
+RUN npm prune --production
 
-# Install production dependencies including path resolution packages
-RUN npm install --production --no-save tsconfig-paths module-alias
-
-# Run the application with both path resolution systems
+# Arranca usando ambos resolvers
 CMD ["node", "-r", "module-alias/register", "-r", "tsconfig-paths/register", "dist/server.js"]
