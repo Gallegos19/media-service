@@ -19,7 +19,7 @@ RUN npx prisma generate
 
 # Copia el resto del código fuente y construye
 COPY . .
-RUN npm run build
+RUN npm run build 2>&1 | tee /tmp/build.log || (cat /tmp/build.log && exit 1)
 
 # Stage 2: Runtime
 FROM node:18-alpine
