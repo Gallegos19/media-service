@@ -11,14 +11,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma/schema.prisma ./prisma/
 
-# Install dependencies
+# Install all dependencies including devDependencies
 RUN npm install
 
-# Generate Prisma client (skip if DATABASE_URL not set)
-RUN if [ -z "$DATABASE_URL" ]; then \
-    echo "Warning: DATABASE_URL not set, skipping prisma generate"; \
-    else npx prisma generate; \
-    fi
+# Generate Prisma client
+RUN npx prisma generate
 
 # Copy source files
 COPY . .
@@ -29,11 +26,8 @@ RUN npm run build 2>&1 | tee build.log || (cat build.log && exit 1)
 # Set production environment
 ENV NODE_ENV=production
 
-# Ensure module-alias is installed as production dependency
-RUN npm install module-alias --save-prod
+# Install production dependencies including path resolution packages
+RUN npm install --production --no-save tsconfig-paths module-alias
 
-# Clean up dev dependencies
-RUN npm prune --production
-
-# Run the application with simpler startup
-CMD ["node", "dist/server.js"]
+# Run the application with both path resolution systems
+CMD ["node", "-r", "module-alias/register", "-r", "tsconfig-paths/register", "dist/server.js"]
