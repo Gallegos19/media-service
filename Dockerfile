@@ -14,7 +14,7 @@ COPY prisma ./prisma/
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/db"
 
 # Instala dependencias y genera cliente Prisma
-RUN npm ci --no-optional
+RUN npm install --legacy-peer-deps
 RUN npx prisma generate
 
 # Copia el resto del código fuente y construye
