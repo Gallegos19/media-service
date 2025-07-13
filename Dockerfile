@@ -2,30 +2,35 @@
 FROM node:18-alpine
 
 # Install dependencies needed for Prisma and other build tools
-RUN apk add --no-cache openssl python3 make g++
+RUN apk add --no-cache openssl python3 make g++ git
 
 # Create app directory
 WORKDIR /app
 
 # Install dependencies first for better caching
-COPY package.json ./
-RUN if [ -f package-lock.json ]; then npm ci; \
-    else npm install; fi
-
-# Copy Prisma schema
+COPY package*.json ./
 COPY prisma/schema.prisma ./prisma/
 
-# Generate Prisma client
-RUN npx prisma generate
+# Install dependencies
+RUN npm install
+
+# Generate Prisma client (skip if DATABASE_URL not set)
+RUN if [ -z "$DATABASE_URL" ]; then \
+    echo "Warning: DATABASE_URL not set, skipping prisma generate"; \
+    else npx prisma generate; \
+    fi
 
 # Copy source files
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with error output
+RUN npm run build || (cat /app/tsconfig.tsbuildinfo && exit 1)
 
 # Set production environment
 ENV NODE_ENV=production
+
+# Clean up dev dependencies
+RUN npm prune --production
 
 # Run the application
 CMD ["npm", "start"]
