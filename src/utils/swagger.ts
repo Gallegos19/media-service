@@ -8,6 +8,11 @@ export const setupSwagger = (app: Application) => {
   // Only enable full Swagger UI in non-production environments
   const isProduction = NODE_ENV === 'production';
   
+  // Ajusta las rutas de los archivos según el entorno
+  const apis = isProduction
+    ? ['dist/infrastructure/web/**/*.js']
+    : ['src/infrastructure/web/**/*.ts', 'src/infrastructure/web/**/*.js'];
+
   const options: swaggerJSDoc.Options = {
     definition: {
       openapi: '3.0.0',
@@ -136,10 +141,7 @@ export const setupSwagger = (app: Application) => {
         }
       }
     },
-    apis: [
-      'src/infrastructure/web/**/*.ts',
-      'src/infrastructure/web/**/*.js'
-    ]
+    apis: apis
   };
 
   const specs = swaggerJSDoc(options);
