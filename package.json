@@ -14,11 +14,12 @@
     "@infrastructure": "dist/infrastructure",
     "@shared": "dist/shared",
     "@interfaces": "dist/interfaces",
-    "@config": "dist/config"
+    "@config": "dist/config",
+    "@exceptions": "dist/exceptions"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node -r tsconfig-paths/register dist/server.js",
+    "start": "node -r module-alias/register -r tsconfig-paths/register dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
     "dev:debug": "cross-env NODE_OPTIONS='--inspect' ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
     "test": "jest",

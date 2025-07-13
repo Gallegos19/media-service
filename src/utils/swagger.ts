@@ -1,7 +1,7 @@
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { Application } from 'express';
-import { API_DOCS_PATH, NODE_ENV } from '../config';
+import { API_DOCS_PATH, NODE_ENV } from '@config';
 import { version } from '../../package.json';
 
 export const setupSwagger = (app: Application) => {

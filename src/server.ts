@@ -1,13 +1,13 @@
 import { app } from './app';
 import { logger } from './shared/infrastructure/logger';
-import { NODE_ENV, PORT } from './config';
+import { NODE_ENV, PORT } from '@config';
 
 // Import routes
-import HealthRoutes from './infrastructure/web/health/health.routes';
-import MediaRoutes from './infrastructure/web/media/media.routes';
+import HealthRoutes from '@infrastructure/web/health/health.routes';
+import MediaRoutes from '@infrastructure/web/media/media.routes';
 
 // Importar configuración de la base de datos
-import './infrastructure/config/Database';
+import '@infrastructure/config/Database';
 
 async function startServer() {
   try {
