@@ -10,6 +10,9 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
+# Establece una DATABASE_URL dummy SOLO para el build (Prisma la necesita)
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/db"
+
 # Instala dependencias y genera cliente Prisma
 RUN npm ci --no-optional && \
     npx prisma generate
