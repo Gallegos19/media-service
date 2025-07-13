@@ -24,7 +24,7 @@ RUN if [ -z "$DATABASE_URL" ]; then \
 COPY . .
 
 # Build the application with error output
-RUN npm run build || (cat /app/tsconfig.tsbuildinfo && exit 1)
+RUN npm run build 2>&1 | tee build.log || (cat build.log && exit 1)
 
 # Set production environment
 ENV NODE_ENV=production
