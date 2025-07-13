@@ -1,6 +1,7 @@
+import 'reflect-metadata';
 import { app } from './app';
 import { logger } from './shared/infrastructure/logger';
-import { NODE_ENV, PORT } from '@config';
+import { NODE_ENV, PORT } from '@config/index';
 
 // Import routes
 import HealthRoutes from '@infrastructure/web/health/health.routes';

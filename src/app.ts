@@ -5,7 +5,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS, API_DOCS_PATH } from '@config';
+import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS, API_DOCS_PATH } from '@config/index';
 import { logger, stream } from './shared/infrastructure/logger';
 import ErrorMiddleware from './middlewares/error.middleware';
 import { Routes } from './interfaces/routes.interface';

@@ -13,7 +13,7 @@ import { Request } from 'express';
 import multer from 'multer';
 import { logger } from '@shared/infrastructure';
 import { BadRequestException, NotFoundException } from '@exceptions/HttpException';
-import { S3_CONFIG } from '@config';
+import { S3_CONFIG } from '@config/index';
 const unlinkAsync = promisify(fs.unlink);
 
 export class MediaService {

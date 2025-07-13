@@ -3,10 +3,11 @@ import { MediaController } from './media.controller';
 import { upload } from './middleware/upload.middleware';
 import { CreateMediaDto, OptimizeMediaDto, CreateVariantDto } from './dtos/media.dto';
 import { MediaService } from './services/media.service';
-import { authMiddleware, validationMiddleware } from '@middlewares';
 import { PrismaMediaFileRepository } from '@infrastructure/database';
-import { Routes } from '@interfaces';
 import { logger } from '@shared/infrastructure';
+import { Routes } from '@interfaces/routes.interface';
+import { authMiddleware } from '@middlewares/auth.middleware';
+import { validationMiddleware } from '@middlewares/validation.middleware';
 
 export class MediaRoutes implements Routes {
   public path = '/api/media';
