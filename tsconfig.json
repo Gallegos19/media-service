@@ -16,6 +16,7 @@
     "sourceMap": true,
     "declaration": true,
     "emitDecoratorMetadata": true,
+    "removeComments": false,
     "experimentalDecorators": true,
     "typeRoots": [
       "./node_modules/@types",
