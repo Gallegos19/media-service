@@ -8,8 +8,9 @@ RUN apk add --no-cache openssl python3 make g++
 WORKDIR /app
 
 # Install dependencies first for better caching
-COPY package.json package-lock.json ./
-RUN npm install
+COPY package.json ./
+RUN if [ -f package-lock.json ]; then npm ci; \
+    else npm install; fi
 
 # Copy Prisma schema
 COPY prisma/schema.prisma ./prisma/
