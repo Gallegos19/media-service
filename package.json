@@ -9,12 +9,12 @@
   "main": "dist/main.js",
   "types": "dist/main.d.ts",
   "_moduleAliases": {
-    "@application": "./src/application",
-    "@domain": "./src/domain",
-    "@infrastructure": "./src/infrastructure",
-    "@shared": "./src/shared",
-    "@interfaces": "./src/interfaces",
-    "@config": "./src/config"
+    "@application": "dist/application",
+    "@domain": "dist/domain",
+    "@infrastructure": "dist/infrastructure",
+    "@shared": "dist/shared",
+    "@interfaces": "dist/interfaces",
+    "@config": "dist/config"
   },
   "scripts": {
     "build": "tsc",
