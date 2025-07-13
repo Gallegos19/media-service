@@ -193,7 +193,7 @@ export class App {
   }
 
   private initializeSwagger() {
-    if (this.env === 'development' || this.env === 'staging') {
+    if (this.env === 'development' || this.env === 'master') {
       setupSwagger(this.app);
       logger.info('Swagger documentation initialized');
     }
